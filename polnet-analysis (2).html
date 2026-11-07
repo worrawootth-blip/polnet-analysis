@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PolNet Lab</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{--ink:#1d2433;--bg:#e8ecf1;--pn:#fff;--ac:#0f6b6b;--ac2:#c28a12;--mut:#5d6878;--ln:#cfd6df}
+*{box-sizing:border-box}body{margin:0;font:16px/1.6 Sarabun,system-ui,sans-serif;color:var(--ink);background:var(--bg)}
+header{background:var(--ink);color:#fff;padding:20px 28px;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+header h1{margin:0;font-size:1.5rem}header p{margin:0;color:#b9c3d1;font-size:.9rem}
+.lang button{background:none;border:1px solid #6b7686;color:#fff;padding:4px 12px;cursor:pointer;font:inherit}
+.lang button.on{background:var(--ac2);border-color:var(--ac2);color:var(--ink);font-weight:700}
+main{display:grid;grid-template-columns:340px 1fr;gap:20px;padding:20px 28px;max-width:1400px;margin:auto}
+@media(max-width:900px){main{grid-template-columns:1fr;padding:14px}}
+aside{display:flex;flex-direction:column;gap:14px;align-self:start}
+.card{background:var(--pn);border:1px solid var(--ln);border-radius:6px;padding:16px}
+h2{font-size:1.05rem;margin:0 0 10px}h2 i{font-style:normal;display:inline-block;width:24px;height:24px;line-height:24px;text-align:center;background:var(--ac);color:#fff;border-radius:50%;margin-right:8px;font-size:.85rem}
+.m{display:block;width:100%;text-align:left;background:#f5f7fa;border:1px solid var(--ln);border-radius:4px;padding:8px 10px;margin-bottom:6px;cursor:pointer;font:inherit;color:inherit}
+.m b{display:block}.m span{font-size:.82rem;color:var(--mut)}.m.on{border-color:var(--ac);background:#e3f1f1;box-shadow:inset 4px 0 0 var(--ac)}
+.btn{font:inherit;border:1px solid var(--ac);background:var(--ac);color:#fff;padding:7px 14px;border-radius:4px;cursor:pointer;margin:3px 3px 3px 0}
+.btn.o{background:#fff;color:var(--ac)}.btn.w{background:var(--ac2);border-color:var(--ac2);color:var(--ink);font-weight:700;width:100%;padding:10px}
+.btn.r{background:#fff;border-color:#a33;color:#a33}.btn:hover{filter:brightness(.93)}
+input[type=file]{width:100%;font:inherit;font-size:.85rem}input[type=number]{width:90px;font:inherit;padding:3px}
+#msg{font-size:.88rem;margin-top:8px;color:var(--ac)}#msg.e{color:#a33}
+section{display:flex;flex-direction:column;gap:14px;min-width:0}
+.empty{color:var(--mut);text-align:center;padding:60px 20px}
+table{border-collapse:collapse;width:100%;font-size:.88rem}th,td{border:1px solid var(--ln);padding:5px 9px;text-align:right}
+th{background:#eef2f6}td:first-child,th:first-child{text-align:left}.tw{overflow-x:auto;margin-bottom:12px}
+.ex{background:#f7f3e6;border-left:4px solid var(--ac2);padding:10px 14px;font-size:.93rem;margin:10px 0}
+.chips button{font:inherit;border:1px solid var(--ln);background:#fff;padding:4px 12px;margin:0 6px 6px 0;border-radius:16px;cursor:pointer}
+.chips button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+canvas{width:100%;max-height:560px}
+</style></head><body>
+<header><div><h1>PolNet Lab</h1><p data-k="sub"></p></div>
+<div class="lang"><button id="bth" class="on" onclick="setL('th')">ไทย</button><button id="ben" onclick="setL('en')">English</button></div></header>
+<main>
+<aside>
+<div class="card"><h2><i>1</i><span data-k="s1"></span></h2>
+<button class="m on" data-m="qap"><b data-k="mq"></b><span data-k="mqd"></span></button>
+<button class="m" data-m="ergm"><b data-k="me"></b><span data-k="med"></span></button>
+<button class="m" data-m="spatial"><b data-k="ms"></b><span data-k="msd"></span></button>
+<button class="m" data-m="dyadic"><b data-k="md"></b><span data-k="mdd"></span></button></div>
+<div class="card"><h2><i>2</i><span data-k="s2"></span></h2>
+<input type="file" id="f" accept=".xlsx,.xls">
+<p style="font-size:.8rem;color:var(--mut);margin:6px 0" data-k="fmt"></p>
+<button class="btn o" id="bs" data-k="sample"></button><button class="btn o" id="bd" data-k="dls"></button><div id="msg"></div></div>
+<div class="card"><h2><i>3</i><span data-k="s3"></span></h2>
+<label style="font-size:.85rem"><span data-k="perm"></span> <input type="number" id="np" value="999" min="99" max="9999"></label><br><br>
+<button class="btn w" id="br" data-k="run"></button>
+<button class="btn r" id="bx" style="margin-top:8px" data-k="reset"></button></div>
+</aside>
+<section id="out"><div class="card empty" data-k="empty"></div></section>
+</main>
+<script>
+const TT={th:{sub:'วิเคราะห์ข้อมูลเครือข่ายและเชิงพื้นที่สำหรับรัฐศาสตร์และเศรษฐศาสตร์การเมือง',s1:'เลือกวิธีวิเคราะห์',s2:'ข้อมูล',s3:'ประมวลผล',
+mq:'QAP',mqd:'ถดถอยพหุคูณบนเมทริกซ์ (Dekker) + Mantel test',me:'ERGM',med:'โมเดลเครือข่ายเชิงสถิติ (MPLE + MCMC-MLE)',ms:'Spatial regression',msd:'Moran\'s I, OLS, Spatial lag (SAR), Spatial error (SEM)',md:'Dyadic regression',mdd:'Gravity model + dyadic-robust SE',
+fmt:'ไฟล์ .xlsx: ชีต Dyads (คอลัมน์ 1-2 = คู่ประเทศ, 3 = y, 4+ = x) และชีต Nodes (ชื่อ, lon, lat, y, x…)',sample:'ทดลองข้อมูลตัวอย่าง',dls:'ดาวน์โหลดไฟล์ตัวอย่าง',perm:'จำนวนรอบ permutation',run:'ประมวลผล',reset:'รีเซ็ตหน้า',
+empty:'เลือกวิธีวิเคราะห์ แนบไฟล์หรือใช้ข้อมูลตัวอย่าง แล้วกด "ประมวลผล"',res:'ผลการวิเคราะห์',exl:'คำอธิบายผล',dlx:'ดาวน์โหลดตาราง (Excel)',gr:'กราฟ',dlp:'ดาวน์โหลดกราฟ (PNG)',
+var:'ตัวแปร',loaded:'โหลดข้อมูลแล้ว: ',dy:'คู่',nd:'โหนด',nodata:'ยังไม่มีข้อมูล กรุณาแนบไฟล์หรือใช้ข้อมูลตัวอย่าง',needDy:'ต้องมีชีต Dyads (อย่างน้อย 3 คอลัมน์ y, x)',needNd:'ต้องมีชีต Nodes (ชื่อ, lon, lat, y, x…)',full:'QAP ต้องมีข้อมูลครบทุกคู่ของโหนด',
+c_coef:'ค่าสัมประสิทธิ์',c_fit:'ค่าจริง vs ค่าพยากรณ์',c_resid:'ส่วนเหลือ',c_net:'เครือข่าย',c_perm:'การแจกแจง permutation',c_moran:'Moran scatterplot',c_deg:'การกระจายดีกรี',obs:'ค่าสังเกต',fitl:'ค่าพยากรณ์',freq:'ความถี่'},
+en:{sub:'Network and spatial analysis for political science and political economy',s1:'Choose a method',s2:'Data',s3:'Run',
+mq:'QAP',mqd:'Matrix regression (Dekker) + Mantel test',me:'ERGM',med:'Exponential random graph model (MPLE + MCMC-MLE)',ms:'Spatial regression',msd:'Moran\'s I, OLS, Spatial lag (SAR), Spatial error (SEM)',md:'Dyadic regression',mdd:'Gravity model + dyadic-robust SE',
+fmt:'.xlsx file: sheet Dyads (cols 1-2 = pair, 3 = y, 4+ = x) and sheet Nodes (name, lon, lat, y, x…)',sample:'Try sample data',dls:'Download sample file',perm:'Permutations',run:'Run analysis',reset:'Reset page',
+empty:'Choose a method, upload a file or use the sample data, then press "Run analysis".',res:'Results',exl:'Interpretation',dlx:'Download tables (Excel)',gr:'Charts',dlp:'Download chart (PNG)',
+var:'Variable',loaded:'Data loaded: ',dy:'dyads',nd:'nodes',nodata:'No data yet. Upload a file or use the sample data.',needDy:'Sheet Dyads is required (at least 3 columns: y, x)',needNd:'Sheet Nodes is required (name, lon, lat, y, x…)',full:'QAP needs every node pair to be present',
+c_coef:'Coefficients',c_fit:'Observed vs fitted',c_resid:'Residuals',c_net:'Network',c_perm:'Permutation distribution',c_moran:'Moran scatterplot',c_deg:'Degree distribution',obs:'Observed',fitl:'Fitted',freq:'Frequency'}};
+let L='th',S=null,R=null,meth='qap',ch=null,kind=null;
+const t=k=>TT[L][k]||k,$=id=>document.getElementById(id);
+const f=(x,d=4)=>isFinite(x)?(+x).toFixed(d):'-',pf=p=>p<1e-4?'<0.0001':f(p,4);
+const st=p=>p<.001?'***':p<.01?'**':p<.05?'*':p<.1?'.':'';
+const Phi=z=>{const a=Math.abs(z),u=1/(1+.2316419*a),p=.3989423*Math.exp(-a*a/2)*u*(.3193815+u*(-.3565638+u*(1.781478+u*(-1.821256+u*1.330274))));return z>0?1-p:p};
+const pv=z=>2*(1-Phi(Math.abs(z)));
+const mean=a=>a.reduce((s,v)=>s+v,0)/a.length;
+const Tr=a=>a[0].map((_,j)=>a.map(r=>r[j]));
+const mm=(a,b)=>a.map(r=>b[0].map((_,j)=>r.reduce((s,v,k)=>s+v*b[k][j],0)));
+function inv(A){const n=A.length,M=A.map((r,i)=>[...r,...Array.from({length:n},(_,j)=>+(i==j))]);for(let c=0;c<n;c++){let p=c;for(let r=c+1;r<n;r++)if(Math.abs(M[r][c])>Math.abs(M[p][c]))p=r;[M[c],M[p]]=[M[p],M[c]];const d=M[c][c];if(Math.abs(d)<1e-11)throw Error('Singular matrix (collinear variables / ตัวแปรสัมพันธ์กันเกินไป)');for(let j=0;j<2*n;j++)M[c][j]/=d;for(let r=0;r<n;r++)if(r!=c){const q=M[r][c];if(q)for(let j=0;j<2*n;j++)M[r][j]-=q*M[c][j]}}return M.map(r=>r.slice(n))}
+const mv=(M,v)=>M.map(r=>r.reduce((s,x,k)=>s+x*v[k],0));
+function ols(X,y){const Xt=Tr(X),iv=inv(mm(Xt,X)),b=mv(iv,mv(Xt,y)),fit=mv(X,b),e=y.map((v,i)=>v-fit[i]);return{b,iv,fit,e}}
+const r2=(y,e)=>{const m=mean(y);return 1-e.reduce((s,v)=>s+v*v,0)/y.reduce((s,v)=>s+(v-m)**2,0)};
+function corr(a,b){const ma=mean(a),mb=mean(b);let n=0,x=0,y=0;a.forEach((v,i)=>{n+=(v-ma)*(b[i]-mb);x+=(v-ma)**2;y+=(b[i]-mb)**2});return n/Math.sqrt(x*y)}
+function shuf(n){const p=[...Array(n).keys()];for(let i=n-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[p[i],p[j]]=[p[j],p[i]]}return p}
+function hav(a,b){const r=Math.PI/180,dl=(b.lon-a.lon)*r,dp=(b.lat-a.lat)*r,h=Math.sin(dp/2)**2+Math.cos(a.lat*r)*Math.cos(b.lat*r)*Math.sin(dl/2)**2;return 12742*Math.asin(Math.sqrt(h))}
+function mkW(nd){const n=nd.length;return nd.map((a,i)=>{const w=nd.map((b,j)=>i==j?0:1/hav(a,b)),s=w.reduce((x,y)=>x+y,0);return w.map(v=>v/s)})}
+const names=(d,k)=>['(Intercept)',...d.x];
+function coefRows(nm,b,se,p){return nm.map((n,i)=>{const z=b[i]/se[i];const pp=p?p[i]:pv(z);return[n,b[i],se[i],z,pp,b[i]-1.96*se[i],b[i]+1.96*se[i],st(pp)]})}
+const CH=['var','b','SE','z','p','CI 2.5%','CI 97.5%',''];
+function eigclip(A){const k=A.length;let V=A.map((r,i)=>r.map((_,j)=>+(i==j))),B=A.map(r=>[...r]);for(let sw=0;sw<60;sw++){let off=0;for(let i=0;i<k;i++)for(let j=i+1;j<k;j++)off+=B[i][j]**2;if(off<1e-18)break;
+for(let p=0;p<k;p++)for(let q=p+1;q<k;q++){if(Math.abs(B[p][q])<1e-300)continue;const th=(B[q][q]-B[p][p])/(2*B[p][q]),t=Math.sign(th||1)/(Math.abs(th)+Math.sqrt(th*th+1)),c=1/Math.sqrt(t*t+1),s=t*c;
+for(let r=0;r<k;r++){const a=B[r][p],b=B[r][q];B[r][p]=c*a-s*b;B[r][q]=s*a+c*b}for(let r=0;r<k;r++){const a=B[p][r],b=B[q][r];B[p][r]=c*a-s*b;B[q][r]=s*a+c*b}for(let r=0;r<k;r++){const a=V[r][p],b=V[r][q];V[r][p]=c*a-s*b;V[r][q]=s*a+c*b}}}
+const ev=B.map((r,i)=>Math.max(0,r[i]));return A.map((_,i)=>A.map((_,j)=>ev.reduce((s,e,c)=>s+e*V[i][c]*V[j][c],0)))}
+function logdet(A){const n=A.length,M=A.map(r=>[...r]);let s=0,g=1;for(let c=0;c<n;c++){let p=c;for(let r=c+1;r<n;r++)if(Math.abs(M[r][c])>Math.abs(M[p][c]))p=r;if(p!=c)g=-g;[M[c],M[p]]=[M[p],M[c]];if(M[c][c]<0)g=-g;s+=Math.log(Math.abs(M[c][c]));for(let r=c+1;r<n;r++){const q=M[r][c]/M[c][c];for(let j=c;j<n;j++)M[r][j]-=q*M[c][j]}}return g>0?s:-Infinity}
+function mcmcErgm(dy,y,n,th0){const N=dy.length,k=th0.length,A0=Array.from({length:n},()=>Array(n).fill(0));dy.forEach((d,q)=>{if(y[q])A0[d.a][d.b]=A0[d.b][d.a]=1});
+const spf=(A,a,b)=>{let c=0;for(let z=0;z<n;z++)c+=A[a][z]*A[b][z];return c},go=Array(k).fill(0);
+dy.forEach((d,q)=>{if(y[q]){go[0]++;go[1]+=spf(A0,d.a,d.b)/3;d.x.forEach((v,j)=>go[2+j]+=v)}});
+const sim=(th,ns)=>{const A=A0.map(r=>[...r]),yy=[...y],g=[...go],out=[];for(let s=0;s<(ns+10)*N;s++){const q=Math.floor(Math.random()*N),d=dy[q],sg=1-2*yy[q],sp=spf(A,d.a,d.b),dl=[sg,sg*sp,...d.x.map(v=>sg*v)],e=dl.reduce((a,v,i)=>a+v*th[i],0);
+if(Math.log(Math.random())<e){yy[q]^=1;A[d.a][d.b]=A[d.b][d.a]=yy[q];dl.forEach((v,i)=>g[i]+=v)}if(s>=10*N&&s%N==0)out.push([...g])}return out};
+const mc=o=>{const m=Array(k).fill(0),C=Array.from({length:k},()=>Array(k).fill(0));o.forEach(g=>g.forEach((v,i)=>m[i]+=v/o.length));o.forEach(g=>{for(let i=0;i<k;i++)for(let j=0;j<k;j++)C[i][j]+=(g[i]-m[i])*(g[j]-m[j])/(o.length-1)});return[m,C]},
+rg=C=>inv(C.map((r,i)=>r.map((v,j)=>v+(i==j?1e-6:0))));let th=[...th0];
+for(let it=0;it<10;it++){const[m,C]=mc(sim(th,120)),st_=mv(rg(C),go.map((v,i)=>v-m[i])),a=it<5?.6:.3;th=th.map((v,i)=>Math.max(-15,Math.min(15,v+a*st_[i])))}
+const[m,C]=mc(sim(th,400)),iv=rg(C);return{th,se:iv.map((r,i)=>Math.sqrt(Math.abs(r[i]))),cv:go.map((v,i)=>(v-m[i])/Math.sqrt(C[i][i]+1e-12))}}
+function sig(rows,tail){const g=rows.filter((r,i)=>i>0&&r[4]<.05);if(!g.length)return L=='th'?'ไม่มีตัวแปรใดมีนัยสำคัญที่ระดับ 0.05':'No variable is significant at the 0.05 level.';
+return g.map(r=>L=='th'?`<b>${r[0]}</b> มีความสัมพันธ์เชิง${r[1]>0?'บวก':'ลบ'}อย่างมีนัยสำคัญ (b=${f(r[1],3)}, p=${pf(r[4])})${tail||''}`:`<b>${r[0]}</b> is significantly ${r[1]>0?'positively':'negatively'} associated (b=${f(r[1],3)}, p=${pf(r[4])})${tail||''}`).join('<br>')}
+function net(dy,ids,bin){const ys=dy.map(d=>d.y).sort((a,b)=>a-b),th=bin?.5:ys[Math.floor(ys.length*.7)];return{names:ids,edges:dy.filter(d=>d.y>=th&&(bin?d.y==1:true)).map(d=>[d.a,d.b,d.y]),pos:ids.map((_,i)=>[.5+.4*Math.cos(2*Math.PI*i/ids.length),.5+.4*Math.sin(2*Math.PI*i/ids.length)]),ymin:ys[0],ymax:ys[ys.length-1]}}
+const M={
+qap(S){if(!S.dy)throw Error(t('needDy'));const{dy,ids}=S,n=ids.length,N=dy.length,X=dy.map(d=>[1,...d.x]),y=dy.map(d=>d.y),Y=Array.from({length:n},()=>Array(n).fill(null));
+dy.forEach(d=>{Y[d.a][d.b]=Y[d.b][d.a]=d.y});if(N!=n*(n-1)/2)throw Error(t('full'));
+const m=ols(X,y),k=X[0].length,s2=m.e.reduce((s,v)=>s+v*v,0)/(N-k),se=m.iv.map((r,i)=>Math.sqrt(s2*r[i])),R_=+$('np').value||999,cnt=Array(k).fill(0),mc=Array(k-1).fill(0),
+ro=S.dn.x.map((_,j)=>corr(X.map(r=>r[j+1]),y)),rm=S.dn.x.map((_,j)=>{const rs=ols(X.map(r=>r.filter((_,c)=>c!=j+1)),X.map(r=>r[j+1])).e,Mx=Array.from({length:n},()=>Array(n).fill(0));dy.forEach((d,q)=>{Mx[d.a][d.b]=Mx[d.b][d.a]=rs[q]});return Mx}),dk=Array(k).fill(0),tt=(Xm,yv,j)=>{const q=ols(Xm,yv),s2_=q.e.reduce((a,v)=>a+v*v,0)/(N-k);return q.b[j]/Math.sqrt(s2_*q.iv[j][j])},to=m.b.map((v,i)=>v/se[i]),pd=[];
+for(let r=0;r<R_;r++){const p=shuf(n),yp=dy.map(d=>Y[p[d.a]][p[d.b]]),b=ols(X,yp).b;b.forEach((v,i)=>{if(Math.abs(v)>=Math.abs(m.b[i])-1e-12)cnt[i]++});pd.push(b[1]);for(let j=1;j<k;j++){const Xp=X.map((r,q)=>{const c=[...r];c[j]=rm[j-1][p[dy[q].a]][p[dy[q].b]];return c});if(Math.abs(tt(Xp,y,j))>=Math.abs(to[j])-1e-9)dk[j]++}ro.forEach((v,j)=>{if(Math.abs(corr(X.map(q=>q[j+1]),yp))>=Math.abs(v)-1e-12)mc[j]++})}
+const pq=cnt.map(c=>(c+1)/(R_+1)),pdk=dk.map((c,i)=>i?(c+1)/(R_+1):pq[0]),rows=names(S.dn).map((nm,i)=>[nm,m.b[i],se[i],m.b[i]/se[i],pdk[i],m.b[i]-1.96*se[i],m.b[i]+1.96*se[i],st(pdk[i]),pq[i]]),R2=r2(y,m.e);
+return{tables:[{ti:['MR-QAP (Dekker semi-partialling)','MR-QAP (Dekker semi-partialling)'],h:['var','b','SE (OLS)','t','p (Dekker)','CI 2.5%','CI 97.5%','','p (Y-perm)'],r:rows},
+{ti:['ความสัมพันธ์ Mantel (y กับ x แต่ละตัว)','Mantel correlations (y vs each x)'],h:['var','r','p (perm)'],r:S.dn.x.map((v,j)=>[v,ro[j],(mc[j]+1)/(R_+1)])},
+{ti:['ความเหมาะสมของโมเดล','Model fit'],h:['stat','value'],r:[['N dyads',N],['N nodes',n],['R²',R2],['Adj. R²',1-(1-R2)*(N-1)/(N-k)],['Permutations',R_]]}],
+ex:l=>l=='th'?`QAP ทดสอบว่าความสัมพันธ์ระหว่างเมทริกซ์ y กับเมทริกซ์ x เกิดจากความบังเอิญหรือไม่ โดยสุ่มสลับแถว-คอลัมน์ของ y ${R_} รอบเพื่อสร้างการแจกแจงอ้างอิง ซึ่งแก้ปัญหาที่คู่ประเทศไม่เป็นอิสระต่อกัน<br>โมเดลอธิบายความผันแปรของ y ได้ ${f(R2*100,1)}%<br>${sig(rows)}<br><small>หมายเหตุ: p หลักใช้ Dekker semi-partialling (ทนต่อ x ที่สัมพันธ์กัน) ส่วน Y-permutation แสดงเป็นคอลัมน์เปรียบเทียบ</small>`:`QAP tests whether the association between matrix y and the x matrices could arise by chance, by permuting rows/columns of y ${R_} times to build a reference distribution that respects dyadic dependence.<br>The model explains ${f(R2*100,1)}% of the variance in y.<br>${sig(rows)}<br><small>Note: the main p-value uses Dekker semi-partialling (robust to correlated x); Y-permutation p is shown for comparison.</small>`,
+ch:['coef','fit','resid','perm','net'],cx:{coef:rows,obs:y,fit:m.fit,res:m.e,perm:pd,po:m.b[1],pn:S.dn.x[0],net:net(dy,ids)}}},
+dyadic(S){if(!S.dy)throw Error(t('needDy'));const{dy,ids}=S,n=ids.length,N=dy.length,X=dy.map(d=>[1,...d.x]),y=dy.map(d=>d.y),k=X[0].length,m=ols(X,y),
+u=X.map((r,q)=>r.map(v=>v*m.e[q])),Sa=Array.from({length:n},()=>Array(k).fill(0)),Mt=Array.from({length:k},()=>Array(k).fill(0));
+dy.forEach((d,q)=>{for(let c=0;c<k;c++){Sa[d.a][c]+=u[q][c];Sa[d.b][c]+=u[q][c]}});
+Sa.forEach(s=>{for(let i=0;i<k;i++)for(let j=0;j<k;j++)Mt[i][j]+=s[i]*s[j]});u.forEach(s=>{for(let i=0;i<k;i++)for(let j=0;j<k;j++)Mt[i][j]-=s[i]*s[j]});
+const V=mm(mm(m.iv,eigclip(Mt)),m.iv),se=V.map((r,i)=>Math.sqrt(Math.max(r[i],1e-14))),s2=m.e.reduce((s,v)=>s+v*v,0)/(N-k),sc=m.iv.map((r,i)=>Math.sqrt(s2*r[i])),
+rows=coefRows(names(S.dn),m.b,se).map((r,i)=>{r.push(sc[i]);return r}),R2=r2(y,m.e);
+return{tables:[{ti:['การถดถอยระดับคู่ (SE แบบ dyadic-robust)','Dyadic regression (dyadic-robust SE)'],h:['var','b','SE dyadic','z','p','CI 2.5%','CI 97.5%','','SE OLS'],r:rows.map(r=>[r[0],r[1],r[2],r[3],r[4],r[5],r[6],r[7],r[8]])},
+{ti:['ความเหมาะสมของโมเดล','Model fit'],h:['stat','value'],r:[['N dyads',N],['N nodes',n],['R²',R2],['Adj. R²',1-(1-R2)*(N-1)/(N-k)],['RMSE',Math.sqrt(s2*(N-k)/N)]]}],
+ex:l=>l=='th'?`แบบจำลองแรงโน้มถ่วง/ระดับคู่ประมาณด้วย OLS แต่ใช้ค่าคลาดเคลื่อนมาตรฐานแบบ dyadic-robust (Aronow, Samii & Assenova 2015; ปรับเมทริกซ์ให้ positive semi-definite แบบ Cameron-Gelbach-Miller) ซึ่งยอมให้คู่ที่มีประเทศร่วมกันสัมพันธ์กัน จึงไม่ประเมินความแม่นยำสูงเกินจริง<br>R² = ${f(R2,3)}<br>${sig(rows)}`:`The gravity/dyadic model is estimated by OLS with dyadic-robust standard errors (Aronow, Samii & Assenova 2015; matrix made positive semi-definite as in Cameron-Gelbach-Miller), allowing dyads that share a country to be correlated, so precision is not overstated.<br>R² = ${f(R2,3)}<br>${sig(rows)}`,
+ch:['coef','fit','resid','net'],cx:{coef:rows,obs:y,fit:m.fit,res:m.e,net:net(dy,ids)}}},
+ergm(S){if(!S.dy)throw Error(t('needDy'));const{dy,ids}=S,n=ids.length,N=dy.length,bin=dy.every(d=>d.y==0||d.y==1),md=[...dy.map(d=>d.y)].sort((a,b)=>a-b)[Math.floor(N/2)],y=dy.map(d=>bin?d.y:+(d.y>md)),A=Array.from({length:n},()=>Array(n).fill(0));
+dy.forEach((d,q)=>{if(y[q])A[d.a][d.b]=A[d.b][d.a]=1});const sp=dy.map(d=>{let c=0;for(let z=0;z<n;z++)c+=A[d.a][z]*A[d.b][z];return c}),
+X=dy.map((d,q)=>[1,sp[q],...d.x]),k=X[0].length;let b=Array(k).fill(0),H,p;
+for(let it=0;it<60;it++){p=X.map(r=>1/(1+Math.exp(-Math.max(-30,Math.min(30,r.reduce((s,v,i)=>s+v*b[i],0))))));H=Array.from({length:k},()=>Array(k).fill(0));const g=Array(k).fill(0);
+X.forEach((r,q)=>{const w=p[q]*(1-p[q])+1e-9;for(let i=0;i<k;i++){g[i]+=r[i]*(y[q]-p[q]);for(let j=0;j<k;j++)H[i][j]+=w*r[i]*r[j]}});for(let i=0;i<k;i++)H[i][i]+=1e-8;
+const stp=mv(inv(H),g);b=b.map((v,i)=>v+stp[i]);if(Math.max(...stp.map(Math.abs))<1e-8)break}
+const iv=inv(H),se=iv.map((r,i)=>Math.sqrt(r[i])),ll=y.reduce((s,v,q)=>s+(v?Math.log(p[q]+1e-12):Math.log(1-p[q]+1e-12)),0),pb=mean(y),ll0=N*(pb*Math.log(pb)+(1-pb)*Math.log(1-pb)),
+nm=['edges','triangle',...S.dn.x],rows=coefRows(nm,b,se).map(r=>[...r.slice(0,5),Math.exp(r[1]),r[7]]),deg=Array(n).fill(0);dy.forEach((d,q)=>{if(y[q]){deg[d.a]++;deg[d.b]++}});
+let mcr=null,mce='';try{const q=mcmcErgm(dy,y,n,b);mcr=coefRows(nm,q.th,q.se).map((r,i)=>[...r.slice(0,5),Math.exp(r[1]),q.cv[i],r[7]])}catch(e){mce=e.message}
+const rw=mcr||rows,co=nm.map((v,i)=>({n:v,b:rw[i][1],p:rw[i][4],lo:rw[i][1]-1.96*rw[i][2],hi:rw[i][1]+1.96*rw[i][2]}));
+return{tables:[{ti:['ERGM (pseudo-likelihood)','ERGM (pseudo-likelihood)'],h:['var','θ','SE','z','p','Odds ratio',''],r:rows},...(mcr?[{ti:['ERGM (MCMC-MLE)','ERGM (MCMC-MLE)'],h:['var','θ','SE','z','p','Odds ratio','conv. t',''],r:mcr}]:[]),
+{ti:['ความเหมาะสมของโมเดล','Model fit'],h:['stat','value'],r:[['N dyads',N],['Edges',y.reduce((s,v)=>s+v,0)],['Density',pb],['Log-lik',ll],['Null log-lik',ll0],['AIC',2*k-2*ll],['McFadden R²',1-ll/ll0]]}],
+ex:l=>l=='th'?`ERGM ประมาณความน่าจะเป็นที่จะเกิดความสัมพันธ์ (เช่น พันธมิตร/การค้าสูง) ระหว่างคู่ประเทศ จากโครงสร้างเครือข่าย (edges, triangle) และตัวแปรคู่ ค่า Odds ratio > 1 หมายถึงเพิ่มโอกาสเกิดเส้นเชื่อม${bin?'':' (y ถูกแปลงเป็น 0/1 โดยใช้ค่ามัธยฐาน)'}<br>${sig(mcr||rows)}<br><small>${mcr?'ผลหลักมาจาก MCMC-MLE (Geyer-Thompson แบบย่อ, Metropolis edge-toggle) ค่า conv. t ควรใกล้ 0 (|t|<0.25) มิฉะนั้นโมเดลอาจไม่ลู่เข้าหรือเกิด degeneracy ส่วน MPLE แสดงเพื่อเปรียบเทียบ (SE ของ MPLE มักต่ำกว่าจริง)':'MCMC ล้มเหลว ('+mce+') จึงแสดงเฉพาะ MPLE ซึ่ง SE มักต่ำกว่าจริง'}</small>`:`ERGM models the probability of a tie (e.g. alliance / high trade) between country pairs given network structure (edges, triangles) and dyadic covariates. An odds ratio above 1 raises the chance of a tie${bin?'':' (y was dichotomised at the median)'}.<br>${sig(mcr||rows)}<br><small>${mcr?'Main results come from MCMC-MLE (simplified Geyer-Thompson, Metropolis edge-toggling). The conv. t column should be near 0 (|t|<0.25); otherwise the model may not have converged or may be degenerate. MPLE is shown for comparison (its SEs tend to be too small).':'MCMC failed ('+mce+'); only MPLE is shown and its SEs tend to be too small.'}</small>`,
+ch:['coef','deg','net'],cx:{coef:co.map(c=>[c.n,c.b,0,0,c.p,c.lo,c.hi]),deg,net:net(dy.map((d,q)=>({...d,y:y[q]})),ids,true)}}},
+spatial(S){if(!S.nodes)throw Error(t('needNd'));const nd=S.nodes,n=nd.length,W=mkW(nd),y=nd.map(d=>d.y),X=nd.map(d=>[1,...d.x]),Wv=v=>W.map(r=>r.reduce((s,w,j)=>s+w*v[j],0)),
+moran=v=>{const m=mean(v),z=v.map(a=>a-m),wz=Wv(z);return{I:z.reduce((s,a,i)=>s+a*wz[i],0)/z.reduce((s,a)=>s+a*a,0),z,wz}},
+mp=v=>{const o=moran(v),R_=+$('np').value||999;let c=0;for(let r=0;r<R_;r++){const p=shuf(n);if(Math.abs(moran(p.map(i=>v[i])).I)>=Math.abs(o.I))c++}return[o,(c+1)/(R_+1)]};
+const m=ols(X,y),k=X[0].length,s2=m.e.reduce((s,v)=>s+v*v,0)/(n-k),se=m.iv.map((r,i)=>Math.sqrt(s2*r[i])),rows=coefRows(names(S.nn),m.b,se),[mo,pm]=mp(y),[me,pe]=mp(m.e);
+const col=j=>X.map(r=>r[j]),WX=Tr(Array.from({length:k-1},(_,j)=>Wv(col(j+1)))),W2X=Tr(Array.from({length:k-1},(_,j)=>Wv(Wv(col(j+1))))),Wy=Wv(y),
+Z=X.map((r,i)=>[...r,Wy[i]]),Hm=X.map((r,i)=>[...r,...WX[i],...W2X[i]]),Zh=mm(Hm,mm(inv(mm(Tr(Hm),Hm)),mm(Tr(Hm),Z))),Mi=inv(mm(Tr(Zh),Z)),bs=mv(Mi,mv(Tr(Zh),y)),
+es=y.map((v,i)=>v-Z[i].reduce((s,a,j)=>s+a*bs[j],0)),sg=es.reduce((s,v)=>s+v*v,0)/(n-k-1),V=inv(mm(Tr(Zh),Zh)),ses=V.map((r,i)=>Math.sqrt(sg*r[i])),
+sar=coefRows([...names(S.nn),'rho (W·y)'],bs,ses),R2=r2(y,m.e);
+const Id=W.map((r,i)=>r.map((_,j)=>+(i==j))),Am=l=>Id.map((r,i)=>r.map((v,j)=>v-l*W[i][j])),
+cl=l=>{const Al=Am(l),q=ols(mm(Al,X),mv(Al,y));return -n/2*Math.log(q.e.reduce((s,v)=>s+v*v,0)/n)+logdet(Al)};
+let bl=-.99,bv=-1e9;for(let l=-.99;l<.995;l+=.01){const v=cl(l);if(v>bv){bv=v;bl=l}}
+let lo=bl-.01,hi=Math.min(.995,bl+.01);for(let i=0;i<50;i++){const a=lo+(hi-lo)/3,b=hi-(hi-lo)/3;if(cl(a)<cl(b))lo=a;else hi=b}
+const lam=(lo+hi)/2,Al=Am(lam),ms=ols(mm(Al,X),mv(Al,y)),ss=ms.e.reduce((s,v)=>s+v*v,0)/n,seb=ms.iv.map((r,i)=>Math.sqrt(ss*r[i])),hh=.01,
+sel=Math.sqrt(Math.abs(1/((cl(lam+hh)-2*cl(lam)+cl(lam-hh))/(hh*hh)))),lr=Math.max(0,2*(cl(lam)-cl(0))),plr=2*(1-Phi(Math.sqrt(lr))),
+sem=coefRows([...names(S.nn),'lambda (error)'],[...ms.b,lam],[...seb,sel]);
+return{tables:[{ti:['การทดสอบ Moran\'s I','Moran\'s I tests'],h:['series','I','p (perm)'],r:[[S.nn.y,mo.I,pm],['OLS residuals',me.I,pe]]},
+{ti:['OLS','OLS'],h:CH,r:rows},{ti:['Spatial lag (SAR, 2SLS)','Spatial lag (SAR, 2SLS)'],h:CH,r:sar},
+{ti:['Spatial error (ML)','Spatial error (ML)'],h:CH,r:sem},{ti:['ความเหมาะสมของโมเดล','Model fit'],h:['stat','value'],r:[['N nodes',n],['R² (OLS)',R2],['LL (SEM)',cl(lam)],['LR test λ=0 (χ²)',lr],['p (LR)',plr],['Weights','inverse distance, row-standardised']]}],
+ex:l=>l=='th'?`Moran's I ของ ${S.nn.y} = ${f(mo.I,3)} (p=${pf(pm)}) ${pm<.05?'แสดงว่ามีสหสัมพันธ์เชิงพื้นที่ (ค่าใกล้กันมีแนวโน้มคล้ายกัน)':'ยังไม่พบสหสัมพันธ์เชิงพื้นที่ชัดเจน'} ส่วนเหลือของ OLS มี I = ${f(me.I,3)} (p=${pf(pe)})<br>ค่า ρ ในโมเดล spatial lag = ${f(bs[k],3)} (p=${pf(sar[k][4])}) สะท้อนผลกระทบจากเพื่อนบ้านที่ถ่วงน้ำหนักตามระยะทาง<br>${sig(sar.slice(0,k))}<br><b>Spatial error (ML):</b> λ = ${f(lam,3)} (p=${pf(sem[k][4])}), LR test λ=0: χ²=${f(lr,2)} (p=${pf(plr)}) ${plr<.05?'แสดงว่า error มีสหสัมพันธ์เชิงพื้นที่ ควรใช้ SEM แทน OLS':''}<br>${sig(sem.slice(0,k))}<br><small>หมายเหตุ: SAR ประมาณด้วย 2SLS, SEM ประมาณด้วย ML (SE ของ λ จากอนุพันธ์เชิงตัวเลขของ concentrated likelihood) และใช้ค่าประมาณปกติสำหรับ p</small>`:`Moran's I for ${S.nn.y} = ${f(mo.I,3)} (p=${pf(pm)}): ${pm<.05?'evidence of spatial autocorrelation (nearby units are alike)':'no clear spatial autocorrelation'}. OLS residual I = ${f(me.I,3)} (p=${pf(pe)}).<br>The spatial lag coefficient ρ = ${f(bs[k],3)} (p=${pf(sar[k][4])}) captures distance-weighted neighbour spillovers.<br>${sig(sar.slice(0,k))}<br><b>Spatial error (ML):</b> λ = ${f(lam,3)} (p=${pf(sem[k][4])}), LR test λ=0: χ²=${f(lr,2)} (p=${pf(plr)}) ${plr<.05?'- error terms are spatially correlated; prefer SEM over OLS.':''}<br>${sig(sem.slice(0,k))}<br><small>Note: SAR by 2SLS, SEM by ML (SE of λ from the numerical curvature of the concentrated likelihood); p-values use the normal approximation.</small>`,
+ch:['coef','moran','fit','resid','net'],cx:{coef:sar,obs:y,fit:m.fit,res:m.e,moran:mo,net:(()=>{const lo=nd.map(a=>a.lon),la=nd.map(a=>a.lat),x0=Math.min(...lo),x1=Math.max(...lo),y0=Math.min(...la),y1=Math.max(...la);return{names:nd.map(a=>a.name),pos:nd.map(a=>[.06+.88*(a.lon-x0)/(x1-x0),.06+.88*(1-(a.lat-y0)/(y1-y0))]),edges:(()=>{const es={},a=Math.min(...y),b=Math.max(...y);W.forEach((r,i)=>[...r.keys()].sort((u,v)=>r[v]-r[u]).slice(0,3).forEach(j=>{es[Math.min(i,j)+'_'+Math.max(i,j)]=(W[i][j]+W[j][i])/2}));const wm=Math.max(...Object.values(es));return Object.keys(es).map(k=>{const[i,j]=k.split('_').map(Number);return[i,j,a+es[k]/wm*(b-a)]})})(),val:y,ymin:Math.min(...y),ymax:Math.max(...y)}})()}}}};
+// ---------- charts ----------
+const bg={id:'bg',beforeDraw(c){const x=c.ctx;x.save();x.globalCompositeOperation='destination-over';x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.restore()}};
+const ciP={id:'ci',afterDatasetsDraw(c){const m=c.getDatasetMeta(0),d=c.config._ci,x=c.ctx;if(!d)return;x.save();x.strokeStyle='#1d2433';x.lineWidth=1.5;m.data.forEach((e,i)=>{const a=c.scales.x.getPixelForValue(d[i][0]),b=c.scales.x.getPixelForValue(d[i][1]);x.beginPath();x.moveTo(a,e.y);x.lineTo(b,e.y);x.moveTo(a,e.y-5);x.lineTo(a,e.y+5);x.moveTo(b,e.y-5);x.lineTo(b,e.y+5);x.stroke()});x.restore()}};
+function hist(v,nb=12){const lo=Math.min(...v),hi=Math.max(...v),w=(hi-lo)/nb||1,c=Array(nb).fill(0);v.forEach(a=>c[Math.min(nb-1,Math.floor((a-lo)/w))]++);return{l:c.map((_,i)=>f(lo+w*(i+.5),2)),c}}
+function draw(k){kind=k;document.querySelectorAll('.chips button').forEach(b=>b.classList.toggle('on',b.dataset.c==k));if(ch){ch.destroy();ch=null}
+const cv=$('cv'),X=R.cx,sc={x:{},y:{}},o={responsive:true,animation:false,plugins:{title:{display:true,text:t('c_'+k),font:{size:16}}}};
+if(k=='net'){cv.width=900;cv.height=560;const g=cv.getContext('2d'),n=X.net;g.fillStyle='#fff';g.fillRect(0,0,900,560);const P=n.pos.map(p=>[40+p[0]*820,40+p[1]*480]),mx=n.ymax-n.ymin||1,dg=n.names.map(()=>0);
+n.edges.forEach(e=>{dg[e[0]]++;dg[e[1]]++;g.strokeStyle='rgba(15,107,107,.45)';g.lineWidth=.6+3.5*(e[2]-n.ymin)/mx;g.beginPath();g.moveTo(...P[e[0]]);g.lineTo(...P[e[1]]);g.stroke()});
+g.font='14px Sarabun,sans-serif';g.textAlign='center';P.forEach((p,i)=>{const v=n.val?(n.val[i]-n.ymin)/mx:0;g.fillStyle='#c28a12';g.beginPath();g.arc(p[0],p[1],8+(n.val?10*v:Math.min(12,dg[i]*1.2)),0,7);g.fill();g.fillStyle='#1d2433';g.fillText(n.names[i],p[0],p[1]-18)});
+g.font='bold 16px Sarabun';g.textAlign='left';g.fillText(t('c_net'),12,22);return}
+let cfg;
+if(k=='coef'){const rw=X.coef.filter((r,i)=>i>0||R.cx.coef[0][0]!='(Intercept)'&&true).filter(r=>r[0]!='(Intercept)'&&r[0]!='edges');cfg={type:'bar',data:{labels:rw.map(r=>r[0]),datasets:[{data:rw.map(r=>r[1]),backgroundColor:rw.map(r=>r[4]<.05?'#0f6b6b':'#9aa5b1')}]},options:{...o,indexAxis:'y',plugins:{...o.plugins,legend:{display:false}}},_ci:rw.map(r=>[r[5],r[6]])}}
+else if(k=='fit'){const mn=Math.min(...X.obs,...X.fit),mxv=Math.max(...X.obs,...X.fit);cfg={type:'scatter',data:{datasets:[{label:t('obs'),data:X.fit.map((v,i)=>({x:v,y:X.obs[i]})),backgroundColor:'#0f6b6b'},{type:'line',data:[{x:mn,y:mn},{x:mxv,y:mxv}],borderColor:'#c28a12',pointRadius:0}]},options:{...o,scales:{x:{title:{display:true,text:t('fitl')}},y:{title:{display:true,text:t('obs')}}},plugins:{...o.plugins,legend:{display:false}}}}}
+else if(k=='resid'||k=='perm'){const h=hist(k=='resid'?X.res:X.perm);cfg={type:'bar',data:{labels:h.l,datasets:[{data:h.c,backgroundColor:'#0f6b6b'}]},options:{...o,plugins:{...o.plugins,legend:{display:false},subtitle:{display:k=='perm',text:(X.pn||'')+' | observed b = '+f(X.po,3)}},scales:{y:{title:{display:true,text:t('freq')}}}}}}
+else if(k=='deg'){const h=hist(X.deg,Math.min(10,Math.max(...X.deg)+1));cfg={type:'bar',data:{labels:h.l,datasets:[{data:h.c,backgroundColor:'#0f6b6b'}]},options:{...o,plugins:{...o.plugins,legend:{display:false}}}}}
+else if(k=='moran'){const mo=X.moran,a=Math.min(...mo.z),b=Math.max(...mo.z);cfg={type:'scatter',data:{datasets:[{data:mo.z.map((v,i)=>({x:v,y:mo.wz[i]})),backgroundColor:'#0f6b6b'},{type:'line',data:[{x:a,y:a*mo.I},{x:b,y:b*mo.I}],borderColor:'#c28a12',pointRadius:0}]},options:{...o,scales:{x:{title:{display:true,text:'z'}},y:{title:{display:true,text:'Wz'}}},plugins:{...o.plugins,legend:{display:false},subtitle:{display:true,text:'Moran\'s I = '+f(mo.I,3)}}}}}
+cfg.plugins=[bg,ciP];ch=new Chart(cv,cfg);if(cfg._ci)ch.config._ci=cfg._ci}
+// ---------- UI ----------
+function render(){const o=$('out');if(!R){o.innerHTML=`<div class="card empty">${t('empty')}</div>`;return}
+const cell=v=>typeof v=='number'?(Number.isInteger(v)?v:f(v,4)):v,
+tb=R.tables.map(q=>`<h3 style="margin:8px 0">${q.ti[L=='th'?0:1]}</h3><div class="tw"><table><tr>${q.h.map(h=>`<th>${TT[L][h]||h}</th>`).join('')}</tr>${q.r.map(r=>`<tr>${r.map(c=>`<td>${cell(c)}</td>`).join('')}</tr>`).join('')}</table></div>`).join('');
+o.innerHTML=`<div class="card"><h2>${t('res')}</h2>${tb}<h2>${t('exl')}</h2><div class="ex">${R.ex(L)}</div><button class="btn" onclick="dlX()">${t('dlx')}</button></div>
+<div class="card"><h2>${t('gr')}</h2><div class="chips">${R.ch.map(c=>`<button data-c="${c}" onclick="draw('${c}')">${t('c_'+c)}</button>`).join('')}</div><canvas id="cv"></canvas><br><button class="btn" onclick="dlP()">${t('dlp')}</button></div>`;draw(kind&&R.ch.includes(kind)?kind:R.ch[0])}
+function setL(l){L=l;document.documentElement.lang=l;$('bth').classList.toggle('on',l=='th');$('ben').classList.toggle('on',l=='en');document.querySelectorAll('[data-k]').forEach(e=>e.textContent=t(e.dataset.k));if(R)render();else render()}
+function msg(s,e){const m=$('msg');m.textContent=s;m.className=e?'e':''}
+function load(dy,nd){S=parse(dy,nd);msg(t('loaded')+(S.dy?S.dy.length+' '+t('dy')+', ':'')+((S.nodes||S.ids||[]).length)+' '+t('nd'))}
+function parse(dy,nd){const S={};if(dy&&dy.length>1){const h=dy[0].map(String),rows=dy.slice(1).filter(r=>r.length>=4&&r.slice(2).every(v=>typeof v=='number')),ids=[...new Set(rows.flatMap(r=>[String(r[0]),String(r[1])]))];S.dn={y:h[2],x:h.slice(3)};S.ids=ids;S.dy=rows.map(r=>({a:ids.indexOf(String(r[0])),b:ids.indexOf(String(r[1])),y:r[2],x:r.slice(3)}))}
+if(nd&&nd.length>1){const h=nd[0].map(String);S.nn={y:h[3],x:h.slice(4)};S.nodes=nd.slice(1).filter(r=>r.length>=5&&r.slice(1).every(v=>typeof v=='number')).map(r=>({name:String(r[0]),lon:r[1],lat:r[2],y:r[3],x:r.slice(4)}))}return S}
+function sample(){let s=7;const rnd=()=>(s=s*16807%2147483647)/2147483647,nz=()=>(rnd()+rnd()+rnd()-1.5)*1.6,
+C=[['Thailand',15.9,100.9,8.6,4],['Vietnam',14.1,108.3,8.1,2],['Laos',19.9,102.5,7.7,1],['Cambodia',12.6,104.9,7.5,3],['Myanmar',21.9,95.9,7.3,2],['Malaysia',4.2,101.9,9.3,5],['Singapore',1.35,103.8,11,4],['Indonesia',-.8,113.9,8.4,6],['Philippines',12.9,121.8,8.1,6],['China',35.9,104.2,9.3,2],['India',20.6,78.9,7.9,6],['Japan',36.2,138.3,10.6,9],['South Korea',35.9,127.8,10.4,8],['Australia',-25.3,133.8,10.9,9],['Bangladesh',23.7,90.4,7.7,5]],
+nodes=C.map(c=>({name:c[0],lat:c[1],lon:c[2]})),W=mkW(nodes),base=C.map(c=>2+.3*(c[3]-9)+.15*c[4]+nz()),wb=W.map(r=>r.reduce((a,w,j)=>a+w*base[j],0)),
+dy=[['country_i','country_j','log_trade','log_distance','gdp_gap','fta']],nd=[['country','lon','lat','growth','log_gdppc','democracy']];
+for(let a=0;a<C.length;a++)for(let b=a+1;b<C.length;b++){const d=Math.log(hav(nodes[a],nodes[b])),g=Math.abs(C[a][3]-C[b][3]),fta=+(rnd()<(d<8?.65:.25));dy.push([C[a][0],C[b][0],+(9-.8*d-.3*g+.9*fta+nz()*1.2+.3*(C[a][3]+C[b][3]-16)).toFixed(3),+d.toFixed(3),+g.toFixed(2),fta])}
+C.forEach((c,i)=>nd.push([c[0],c[2],c[1],+(base[i]+.6*wb[i]).toFixed(3),c[3],c[4]]));return{dy,nd}}
+function dlX(){const wb=XLSX.utils.book_new();R.tables.forEach((q,i)=>XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([q.h.map(h=>TT[L][h]||h),...q.r]),('T'+(i+1)+' '+q.ti[1]).replace(/[\\\/?*\[\]:]/g,'').slice(0,31)));
+XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([[R.ex(L).replace(/<br>/g,'\n').replace(/<[^>]+>/g,'')]]),'Interpretation');XLSX.writeFile(wb,'results_'+meth+'.xlsx')}
+function dlP(){const a=document.createElement('a');a.href=$('cv').toDataURL('image/png');a.download=meth+'_'+kind+'.png';a.click()}
+document.querySelectorAll('.m').forEach(b=>b.onclick=()=>{meth=b.dataset.m;document.querySelectorAll('.m').forEach(x=>x.classList.toggle('on',x==b))});
+$('bs').onclick=()=>{const s=sample();load(s.dy,s.nd)};
+$('bd').onclick=()=>{const s=sample(),wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(s.dy),'Dyads');XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(s.nd),'Nodes');XLSX.writeFile(wb,'sample_polnet.xlsx')};
+$('f').onchange=e=>{const fl=e.target.files[0];if(!fl)return;const r=new FileReader();r.onload=ev=>{try{const wb=XLSX.read(ev.target.result,{type:'array'}),g=n=>wb.Sheets[n]?XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1}):null;load(g('Dyads')||(wb.SheetNames.length&&!wb.Sheets.Nodes?XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1}):null),g('Nodes'))}catch(x){msg(x.message,1)}};r.readAsArrayBuffer(fl)};
+$('br').onclick=()=>{try{if(!S)throw Error(t('nodata'));R=M[meth](S);msg('');kind=null;render()}catch(e){msg(e.message,1)}};
+$('bx').onclick=()=>{S=R=null;kind=null;if(ch){ch.destroy();ch=null}$('f').value='';$('np').value=999;msg('');render()};
+setL('th');
+</script></body></html>
